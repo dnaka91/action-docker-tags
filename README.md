@@ -1,4 +1,4 @@
-# Docker tag action
+# Docker Tags Action
 
 Generate tags for Docker images based on the current ref-spec.
 

@@ -1,10 +1,11 @@
 name: Sample
 on: [push]
 jobs:
-  run_action:
+  sample:
+    name: Sample
     runs-on: ubuntu-latest
     steps:
-      - name: Docker Tags Action
+      - name: Generate Tags
         id: docker_tags
         uses: dnaka91/action-docker-tags@v0.1
       - name: Get the output tags
