@@ -6,6 +6,6 @@ jobs:
     steps:
       - name: Docker Tags Action
         id: docker_tags
-        uses: dnaka91/action-docker-tags@v0.1.0
+        uses: dnaka91/action-docker-tags@v0.1
       - name: Get the output tags
         run: echo "The tags are ${{ steps.docker_tags.outputs.tags }}"
