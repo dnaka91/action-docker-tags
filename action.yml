@@ -1,0 +1,12 @@
+name: "Docker Tags Action"
+author: "Dominik Nakamura"
+description: "Generate tags for Docker images based on the current ref-spec"
+outputs:
+  tags:
+    description: "All tags that should be set on a Docker image"
+branding:
+  icon: "tag"
+  color: "blue"
+runs:
+  using: "docker"
+  image: "docker://dnaka91/action-docker-tags:0.1.0"
