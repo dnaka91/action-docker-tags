@@ -77,14 +77,11 @@ fn create_versions(git_ref: &str) -> Result<Vec<String>> {
 fn extract_version(git_ref: &str) -> Option<&str> {
     const VERSION_REF: &str = "refs/tags/";
 
-    if git_ref.starts_with(VERSION_REF) {
-        let version = &git_ref[VERSION_REF.len()..];
+    git_ref.strip_prefix(VERSION_REF).and_then(|version| {
         version
             .find(|c| '0' <= c && c <= '9')
             .map(|idx| &version[idx..])
-    } else {
-        None
-    }
+    })
 }
 
 fn generate_tags(repository: &str, versions: Vec<String>) -> String {
