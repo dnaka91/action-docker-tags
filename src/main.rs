@@ -79,7 +79,7 @@ fn extract_version(git_ref: &str) -> Option<&str> {
 
     git_ref.strip_prefix(VERSION_REF).and_then(|version| {
         version
-            .find(|c| '0' <= c && c <= '9')
+            .find(|c| ('0'..='9').contains(&c))
             .map(|idx| &version[idx..])
     })
 }

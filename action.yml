@@ -9,4 +9,4 @@ branding:
   color: "blue"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/dnaka91/action-docker-tags:0.1.0"
+  image: "docker://ghcr.io/dnaka91/action-docker-tags:0.1.1"
