@@ -31,6 +31,7 @@ fn main() -> Result<()> {
 fn add_mask(value: &str) {
     println!("::add-mask::{}", value);
 }
+
 fn set_output(key: &str, value: &str) {
     println!("::set-output name={}::{}", key, value);
 }
@@ -58,14 +59,14 @@ fn create_versions(git_ref: &str) -> Result<Vec<String>> {
     Ok(if let Some(version) = extract_version(git_ref) {
         let semver = Version::parse(version).context("failed parsing semantic version")?;
 
-        if semver.is_prerelease() {
-            vec![semver.to_string()]
-        } else {
+        if semver.pre.is_empty() {
             vec![
                 format!("{}", semver.major),
                 format!("{}.{}", semver.major, semver.minor),
                 format!("{}.{}.{}", semver.major, semver.minor, semver.patch),
             ]
+        } else {
+            vec![semver.to_string()]
         }
     } else if MAIN_BRANCH_REFS.contains(&git_ref) {
         vec!["latest".to_owned()]
@@ -79,7 +80,7 @@ fn extract_version(git_ref: &str) -> Option<&str> {
 
     git_ref.strip_prefix(VERSION_REF).and_then(|version| {
         version
-            .find(|c| ('0'..='9').contains(&c))
+            .find(|c: char| c.is_ascii_digit())
             .map(|idx| &version[idx..])
     })
 }
