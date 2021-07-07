@@ -1,9 +1,12 @@
 FROM clux/muslrust:stable as builder
 
+WORKDIR /volume
+
 COPY src/ src/
 COPY Cargo.lock Cargo.toml ./
 
-RUN cargo install --locked --path .
+RUN cargo install --locked --path . && \
+    strip --strip-all /root/.cargo/bin/docker-tags
 
 FROM scratch
 
