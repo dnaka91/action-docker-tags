@@ -12,6 +12,6 @@ FROM scratch
 
 LABEL org.opencontainers.image.source https://github.com/dnaka91/action-docker-tags
 
-COPY --from=builder /root/.cargo/bin/docker-tags /app/
+COPY --from=builder /root/.cargo/bin/docker-tags /bin/
 
-ENTRYPOINT ["/app/docker-tags"]
+ENTRYPOINT ["/bin/docker-tags"]
