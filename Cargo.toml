@@ -5,9 +5,9 @@ authors = ["Dominik Nakamura <dnaka91@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0.41"
+anyhow = "1.0.42"
 dotenv = "0.15.0"
-semver = "1.0.3"
+semver = "1.0.4"
 
 [profile.release]
 lto = true
