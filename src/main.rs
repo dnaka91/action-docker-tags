@@ -21,7 +21,7 @@ fn main() -> Result<()> {
     );
 
     let versions = create_versions(&input.git_ref).context("failed to create version list")?;
-    let tags = generate_tags(&input.repository, versions);
+    let tags = generate_tags(&input.repository, &versions, &input.registries);
 
     set_output("tags", &tags);
 
@@ -40,6 +40,7 @@ struct Input {
     actor: String,
     repository: String,
     git_ref: String,
+    registries: Vec<String>,
 }
 
 fn get_input() -> Result<Input> {
@@ -50,6 +51,12 @@ fn get_input() -> Result<Input> {
             .context("failed loading GITHUB_REPOSITORY environment variable")?,
         git_ref: env::var("GITHUB_REF")
             .context("failed loading GITHUB_REF environment variable")?,
+        registries: env::args()
+            .nth(1)
+            .context("failed loading registries from program arguments")?
+            .split_whitespace()
+            .map(str::to_owned)
+            .collect(),
     })
 }
 
@@ -85,10 +92,18 @@ fn extract_version(git_ref: &str) -> Option<&str> {
     })
 }
 
-fn generate_tags(repository: &str, versions: Vec<String>) -> String {
-    versions
-        .into_iter()
-        .map(|v| format!("{}:{}", repository, v))
+fn generate_tags(
+    repository: &str,
+    versions: &[impl AsRef<str>],
+    registries: &[impl AsRef<str>],
+) -> String {
+    registries
+        .iter()
+        .flat_map(|r| {
+            versions
+                .iter()
+                .map(move |v| format!("{}/{}:{}", r.as_ref(), repository, v.as_ref()))
+        })
         .fold(String::new(), |mut s, v| {
             if !s.is_empty() {
                 s.push(',');
@@ -145,15 +160,16 @@ mod tests {
     #[test]
     fn generate_tags() {
         assert_eq!(
-            "a:latest",
-            super::generate_tags("a", vec!["latest".to_owned()])
+            "docker.io/a:latest",
+            super::generate_tags("a", &["latest"], &["docker.io"])
         );
         assert_eq!(
-            "a:1,a:1.0,a:1.0.0",
-            super::generate_tags(
-                "a",
-                vec!["1".to_owned(), "1.0".to_owned(), "1.0.0".to_owned()]
-            )
+            "docker.io/a:1,docker.io/a:1.0,docker.io/a:1.0.0",
+            super::generate_tags("a", &["1", "1.0", "1.0.0"], &["docker.io"])
+        );
+        assert_eq!(
+            "docker.io/a/b:latest,ghcr.io/a/b:latest",
+            super::generate_tags("a/b", &["latest"], &["docker.io", "ghcr.io"])
         );
     }
 }

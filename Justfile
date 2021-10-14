@@ -1,6 +1,6 @@
 major := "0"
-minor := major + ".1"
-patch := minor + ".3"
+minor := major + ".2"
+patch := minor + ".0"
 image := "ghcr.io/dnaka91/action-docker-tags"
 
 # list available recipes

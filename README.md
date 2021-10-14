@@ -22,11 +22,26 @@ Currently the auto-generation of tags works as follows:
 
 ## Inputs
 
-Currently no imports are supported and the action works solely on the information it already gets
-from the environment that Github provides.
+The action works mostly on the information it already gets from the environment that Github
+provides. Besides that, the following additional inputs are supported:
 
-Additional options may be added in the future to support other workflows. Please open a PRs if you
-like this Github Action and need additional imports to make it fit to your projects.
+### `registries`
+
+- **Format**: string list (whitespace separated)
+- **Default**: `docker.io`
+
+List of one or more registries. It allows to publish to multiple Docker registries at once by
+creating permutations of registries and versions.
+
+For example, considering the registries is set to `docker.io ghcr.io`, the repo is `a/b` and the
+detected version tags are `1.0.0`, `1.0` and `1`, the final tags would be:
+
+- `docker.io/a/b:1.0.0`
+- `docker.io/a/b:1.0`
+- `docker.io/a/b:1`
+- `ghcr.io/a/b:1.0.0`
+- `ghcr.io/a/b:1.0`
+- `ghcr.io/a/b:1`
 
 ## Outputs
 

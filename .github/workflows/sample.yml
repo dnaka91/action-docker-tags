@@ -12,6 +12,11 @@ jobs:
     steps:
       - name: Generate Tags
         id: docker_tags
-        uses: dnaka91/action-docker-tags@v0.1
+        uses: dnaka91/action-docker-tags@v0.2
+        with:
+          registries: |
+            docker.io
+            ghcr.io
+            quay.io
       - name: Get the output tags
         run: echo "The tags are ${{ steps.docker_tags.outputs.tags }}"
