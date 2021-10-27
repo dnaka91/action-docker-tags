@@ -7,59 +7,48 @@ changes and removed the automatic tag generation based on the ref-spec from Git.
 generates the Docker tags from the Git version so you don't have to include a huge bash script in
 all of your workflow files that push Docker images.
 
-Currently the auto-generation of tags works as follows:
+## ⚠️ Deprecated ⚠️
 
-- The image name is simply taken from the `GITHUB_REPOSITORY` that GitHub provides which is
-  `<username>/<repo>`.
-- If the ref-spec is a tag like `refs/tags/v1.0.0` then the `1.0.0` part is extracted, parsed as
-  a semantic version and turned into 3 versions: `1.0.0`, `1.0` and `1`.
-  - In case the version is a pre-release like `1.0.0-beta` then this version is taken as is and no
-    further splitting into multiple versions is done.
-  - Anything before the first number is stripped, not just `v`, so even `abc1.2.3` would be
-    recognized as `1.2.3`.
-- If the ref-spec is `refs/heads/main` or `refs/heads/master` the version is set to `latest`.
-- In case the ref-spec doesn't match any of the above rules it's ignored and no tags are created.
+This action has been deprecated in favor of the `docker/metadata-action` action which covers the
+whole use case of this action and does even more.
 
-## Inputs
+## Migration to `docker/metadata-action`
 
-The action works mostly on the information it already gets from the environment that Github
-provides. Besides that, the following additional inputs are supported:
+The migration to the official Docker action is pretty straight forward and only requires you to
+change the single step within your workflow.
 
-### `registries`
+This action didn't need any input to generate the tags as it was a fixed setup without much
+configuration. Only if you needed tags for multiple registries you needed to set the `registries`
+field.
 
-- **Format**: string list (whitespace separated)
-- **Default**: `docker.io`
+The new official action requires a little bit of boilerplate. To get the same behavior you can use
+the following settings:
 
-List of one or more registries. It allows to publish to multiple Docker registries at once by
-creating permutations of registries and versions.
+```yaml
+with:
+  tags: |
+    type=ref,event=branch
+    type=semver,pattern={{version}}
+    type=semver,pattern={{major}}.{{minor}}
+    type=semver,pattern={{major}}
+  flavor: |
+    latest=true
+```
 
-For example, considering the registries is set to `docker.io ghcr.io`, the repo is `a/b` and the
-detected version tags are `1.0.0`, `1.0` and `1`, the final tags would be:
+This will create tags with the full **SemVer** version, only major and minor part, and lastly the
+major part only. Also, a `latest` tag is created in addition to a new tag that is the branch name
+that triggered the action.
 
-- `docker.io/a/b:1.0.0`
-- `docker.io/a/b:1.0`
-- `docker.io/a/b:1`
-- `ghcr.io/a/b:1.0.0`
-- `ghcr.io/a/b:1.0`
-- `ghcr.io/a/b:1`
+**Note**: The new official action advises against using `type=semver,pattern={{major}}` if your
+current version is not `1.0` yet, so if you you are still at `0.x.x`, don't add this part.
 
-## Outputs
+A more complete setup migration including multiple registries is provided below.
 
-### `tags`
-
-The only output of this action is `tags` which is a comma separated list of image tags for Docker
-that can be directly passed to the `docker/build-push-action@v2` action.
-
-## Example usage
-
-The usage is almost the same as in the `docker/build-push-action@v2` samples just that you change
-the `Prepare` step to use this action instead.
+Previously with this action:
 
 ```yaml
 name: ci
-
 on: [push]
-
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -69,18 +58,89 @@ jobs:
       - name: Generate tags
         id: docker_tags
         uses: dnaka91/action-docker-tags@v0.1
+        with:
+          registries: |
+            docker.io
+            ghcr.io
+            quay.io
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Red Hat Quay.io
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
           push: true
           tags: ${{ steps.docker_tags.outputs.tags }}
+```
+
+Now with the new official action:
+
+```yaml
+name: ci
+on: [push]
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Generate Docker metadata
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: |
+            docker.io/${{ github.repository }}
+            ghcr.io/${{ github.repository }}
+            quay.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          flavor: |
+            latest=true
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Red Hat Quay.io
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        env:
+          DOCKER_BUILDKIT: 1
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 ```
 
 ## License

@@ -11,6 +11,13 @@ fn main() -> Result<()> {
     #[cfg(debug_assertions)]
     dotenv::dotenv().ok();
 
+    print_warning(
+        "This action is deprecated!",
+        "The `dnaka91/action-docker-tags` action has been deprecated in favor of \
+        `docker/metadata-action`. For migration details check out the project readme \
+        at https://github.com/dnaka91/action-docker-tags",
+    );
+
     let input = get_input()?;
 
     add_mask(&input.actor);
@@ -34,6 +41,10 @@ fn add_mask(value: &str) {
 
 fn set_output(key: &str, value: &str) {
     println!("::set-output name={}::{}", key, value);
+}
+
+fn print_warning(title: &str, message: &str) {
+    println!("::warning title={}::{}", title, message);
 }
 
 struct Input {
